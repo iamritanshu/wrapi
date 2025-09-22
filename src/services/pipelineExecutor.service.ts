@@ -5,6 +5,8 @@ import {
   finishExecution,
 } from "../repositories/execution.repo";
 import apiExecutorService from "./executors/api.executor";
+import mongoExecutor from "./executors/mongo.executor";
+import postgresExecutor from "./executors/postgres.executor";
 import responseHandler from "./executors/response.executor";
 
 async function executeStage(
@@ -64,6 +66,10 @@ export async function executePipeline(
         switch (stage.stageType) {
           case "API":
             return apiExecutorService(stage, input, stageResults);
+          case "MONGO":
+            return mongoExecutor(stage, input, stageResults);
+          case "POSTGRES":
+            return postgresExecutor(stage, input, stageResults);
           case "ResponseHandler":
             return responseHandler(stage, input, stageResults);
           default:
@@ -76,8 +82,8 @@ export async function executePipeline(
         input,
         stageHandler
       );
+      console.log("Stage Result:", stage.stageIndex, result);
 
-      // Save result along with duration
       stageResults[stage.stageIndex - 1] = { ...result, durationMs };
 
       currentStageIndex =

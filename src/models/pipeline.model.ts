@@ -2,6 +2,33 @@ import mongoose, { Document } from "mongoose";
 import { getEpochSeconds } from "../utils/epochTimer";
 import { StageType } from "../types/stage.type";
 
+export interface PostgresConfig {
+  connectionString: string;
+  query: string;
+  parameters?: any[];
+}
+
+export interface MongoParams {
+  filter?: Record<string, any>;
+  update?: Record<string, any>;
+}
+
+export interface MongoConfig {
+  connectionString: string;
+  collection: string;
+  operation: "find" | "insert" | "update" | "delete";
+  parameters?: Record<string, any> | MongoParams;
+}
+
+export interface DBConfig {
+  // optional union for reuse if you keep a single dbConfig
+  connectionString: string;
+  query?: string;
+  parameters?: any[] | MongoParams | Record<string, any>;
+  collection?: string;
+  operation?: "find" | "insert" | "update" | "delete";
+}
+
 export interface PipelineStage {
   stageIndex: number;
   stageName: string;
@@ -9,6 +36,7 @@ export interface PipelineStage {
   methodType?: "GET" | "POST" | "PUT" | "DELETE";
   next: { type: "index"; value: number };
   config?: Record<string, any>;
+  dbConfig?: DBConfig;
   bindings?: Record<string, any>;
   execution?: {
     parallel?: boolean;
@@ -27,6 +55,17 @@ export interface PipelineDoc extends Document {
   updatedAt: number;
 }
 
+const DBConfigSchema = new mongoose.Schema(
+  {
+    connectionString: { type: String },
+    query: { type: String },
+    parameters: { type: Object, default: {} },
+    collection: { type: String },
+    operation: { type: String },
+  },
+  { _id: false }
+);
+
 const StageSchema = new mongoose.Schema(
   {
     stageIndex: { type: Number, required: true },
@@ -35,6 +74,7 @@ const StageSchema = new mongoose.Schema(
     methodType: { type: String },
     next: { type: Object, default: { type: "index", value: -1 } },
     config: { type: Object, default: {} },
+    dbConfig: { type: DBConfigSchema, default: {} },
     bindings: { type: Object, default: {} },
     execution: { type: Object, default: {} },
   },

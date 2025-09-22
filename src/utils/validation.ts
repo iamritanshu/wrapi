@@ -2,7 +2,8 @@ import { PipelineStage, PipelineDoc } from "../models/pipeline.model";
 
 const allowedStageTypes = [
   "API",
-  "DB",
+  "MONGO",
+  "POSTGRES",
   "Condition",
   "Eval",
   "ResponseHandler",

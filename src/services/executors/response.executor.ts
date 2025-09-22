@@ -21,37 +21,48 @@ export default async function responseHandler(
 function resolveBindings(
   bindings: Record<string, any> = {},
   stageResults: any[]
-) {
+): Record<string, any> {
   const resolved: Record<string, any> = {};
 
   for (const key of Object.keys(bindings)) {
-    let value = bindings[key];
-
-    if (typeof value === "string") {
-      // Replace ?<stage>.<field>? with real values
-      const regex = /\?(\d+)\.(\w+)\?/g;
-      value = value.replace(regex, (_, stageIdx, field) => {
-        const idx = parseInt(stageIdx, 10) - 1;
-        const v = stageResults[idx]?.[field];
-        // If value is object, leave as is
-        return typeof v === "object" ? JSON.stringify(v) : v ?? "";
-      });
-
-      try {
-        // Only parse JSON if string looks like JSON
-        if (value.startsWith("{") || value.startsWith("[")) {
-          resolved[key] = JSON.parse(value);
-        } else {
-          resolved[key] = value;
-        }
-      } catch {
-        resolved[key] = value;
-      }
-    } else {
-      // Already an object or primitive
-      resolved[key] = value;
-    }
+    resolved[key] = deepResolve(bindings[key], stageResults);
   }
 
   return resolved;
+}
+
+function deepResolve(value: any, stageResults: any[]): any {
+  if (typeof value === "string") {
+    const regex = /\?(\d+)\.(\w+)\?/g;
+    let replaced = value.replace(regex, (_, stageIdx, field) => {
+      const idx = parseInt(stageIdx, 10) - 1;
+      const v = stageResults[idx]?.[field];
+      return v != null && typeof v !== "string" ? JSON.stringify(v) : v ?? "";
+    });
+
+    try {
+      if (
+        (replaced.startsWith("{") && replaced.endsWith("}")) ||
+        (replaced.startsWith("[") && replaced.endsWith("]"))
+      ) {
+        return JSON.parse(replaced);
+      }
+    } catch {}
+
+    return replaced;
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((v) => deepResolve(v, stageResults));
+  }
+
+  if (typeof value === "object" && value !== null) {
+    const obj: Record<string, any> = {};
+    for (const k of Object.keys(value)) {
+      obj[k] = deepResolve(value[k], stageResults);
+    }
+    return obj;
+  }
+
+  return value;
 }

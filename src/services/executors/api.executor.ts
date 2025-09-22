@@ -222,7 +222,7 @@ function safeJsonParse(data: string) {
 
 /* ----------------- Helpers for bindings and path ----------------- */
 
-function resolveHeaderBindings(
+export function resolveHeaderBindings(
   headerBindings: Record<string, any> | undefined,
   input: any,
   stageResults: any[] = []
@@ -240,7 +240,7 @@ function resolveHeaderBindings(
   return out;
 }
 
-function resolveBindings(
+export function resolveBindings(
   bindings: Record<string, any>,
   input: any,
   stageResults: any[] = []
